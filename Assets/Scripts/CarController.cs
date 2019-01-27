@@ -26,6 +26,7 @@ public class CarController : MonoBehaviour
     public Transform boost;
     private Rigidbody rb;
     public AudioSource audioBoost;
+    public WallOfDeathController wallController;
 
     public WheelCollider frontDriverW, frontPassengerW;
     public WheelCollider rearDriverW, rearPassengerW;
@@ -109,6 +110,7 @@ public class CarController : MonoBehaviour
         //Checks if the car hits any obstacle, if so, resets it
         if (collision.gameObject.tag == "death")
         {
+            wallController.wallReset = true;
             dead = true;
             rb.rotation = Quaternion.identity;
             frontDriverW.motorTorque = 0;
@@ -118,6 +120,8 @@ public class CarController : MonoBehaviour
             transform.position = new Vector3(0f, 1f, 0f);
             StartCoroutine(DeadFalse());
             audioBoost.Stop();
+            wallController.active = false;
+            StartCoroutine(ActivateWall());
 
         }
 
@@ -125,7 +129,7 @@ public class CarController : MonoBehaviour
 
         if (collision.gameObject.tag == "end")
         {
-            print("Acabou");
+            wallController.wallReset = true;
             dead = true;
             rb.rotation = Quaternion.identity;
             frontDriverW.motorTorque = 0;
@@ -134,6 +138,9 @@ public class CarController : MonoBehaviour
             rearPassengerW.motorTorque = 0;
             transform.position = new Vector3(0f, 1f, 0f);
             StartCoroutine(DeadFalse());
+            audioBoost.Stop();
+            wallController.active = false;
+            StartCoroutine(ActivateWall());
         }
     }
 
@@ -197,6 +204,15 @@ public class CarController : MonoBehaviour
         dead = false;
     }
 
+    //Wall Activation
+
+    IEnumerator ActivateWall()
+    {
+        
+        yield return new WaitForSeconds(3f);
+        wallController.active = true;
+    }
+
 
 
 
@@ -213,6 +229,7 @@ public class CarController : MonoBehaviour
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
+        StartCoroutine(ActivateWall());
     }
 
     private void FixedUpdate()
@@ -222,18 +239,18 @@ public class CarController : MonoBehaviour
         Steer();
         UpdateWheelPoses();
 
-        if (Input.GetMouseButton(0) && !dead)
+        if (Input.GetKeyDown("j") && !dead)
         {
             audioBoost.Play();
         }
 
-        if (Input.GetMouseButton(0) && !dead)
+        if (Input.GetKeyUp("j") && !dead)
         {
             audioBoost.Stop();
         }
 
         //Makes the car boost
-        if (Input.GetMouseButton(0) && !dead)
+        if (Input.GetKey("j") && !dead)
         {
             Vector3 boostDirection = rb.transform.position - boost.position;
             rb.AddForce(boostDirection * boostForce, ForceMode.Acceleration);
@@ -265,7 +282,7 @@ public class CarController : MonoBehaviour
             if (horizontalInput != 0)
             {
                 //Air Roll
-                if (Input.GetMouseButton(1))
+                if (Input.GetKey("k"))
                 {
                     transform.Rotate(new Vector3(0f, 0f, 1f) * -horizontalInput * airRotationSpeed * 1.5f * Time.deltaTime);
                 }
